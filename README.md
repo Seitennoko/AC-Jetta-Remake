@@ -111,7 +111,7 @@ If something does not work:
 
 Note: auto-connect sweeps `192.168.1.1–254` only. If your network uses a
 different subnet (e.g. a phone hotspot on `192.168.43.x`), enter the IP
-shown by the server by hand.
+shown by the server by hand. You are advised to enter the IP address by hand and ignore the auto connection function because it does not work well at most of the time.
 
 ## Binding controls in Assetto Corsa
 
