@@ -63,7 +63,7 @@ requirements.txt   Python dependencies
 3. In a terminal inside this folder:
 
    ```powershell
-   pip install pip install vgamepad websockets
+   pip install vgamepad websockets
    ```
 
    Installing `vgamepad` automatically runs the **ViGEmBus driver**
