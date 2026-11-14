@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>AC Jetta Remake V25.0 Auto Connect</title>
+    <style>
+        * {
+            box-sizing: border-box; user-select: none; -webkit-user-select: none;
+            touch-action: none; margin: 0; padding: 0;
+        }
+        body {
+            width: 100vw; height: 100vh; background-color: #0c0f12;
+            font-family: system-ui, sans-serif; overflow: hidden; position: relative; color: #fff;
+        }
+        
+        /* 頂部控制面板 */
+        #monitor-panel {
+            position: absolute; top: 1.5vh; left: 50%; transform: translateX(-50%);
+            background: rgba(5, 8, 10, 0.95); border: 1px solid rgba(0, 183, 255, 0.3);
+            border-radius: 12px; z-index: 100; width: 48vw; padding: 10px 14px;
+            font-family: monospace; font-size: 11px; line-height: 1.4;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.8); transition: border-color 0.3s ease;
+        }
+        #status-text {
+            color: #00b7ff; font-weight: bold; text-align: center; 
+            margin-bottom: 6px; letter-spacing: 0.5px; border-bottom: 1px solid rgba(255,255,255,0.08);
+            padding-bottom: 5px; font-size: 12px;
+        }
+
+        /* IP控制區域UI重構 */
+        #connection-ctrl {
+            display: flex; gap: 6px; margin-bottom: 8px; justify-content: center; align-items: center;
+        }
+        #ip-input {
+            flex: 1; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px; color: #fff; padding: 4px 8px; font-size: 12px; font-family: monospace;
+            text-align: center; outline: none; -webkit-user-select: text; user-select: text; touch-action: auto;
+        }
+        #ip-input:focus { border-color: #00b7ff; background: rgba(255,255,255,0.12); }
+        .conn-btn {
+            background: #28a745; border: none; color: #fff; padding: 4px 8px; 
+            border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; white-space: nowrap;
+        }
+        .conn-btn.auto { background: #17a2b8; }
+        .conn-btn.disconn { background: #dc3545; display: none; } /* 初始隱藏斷開按鈕 */
+        .conn-btn:active { opacity: 0.8; }
+
+        /* 當連線成功時激活的樣式類：居中斷開按鈕並隱藏其他 */
+        #connection-ctrl.connected #ip-input,
+        #connection-ctrl.connected #btn-connect,
+        #connection-ctrl.connected #btn-auto-connect {
+            display: none !important;
+        }
+        #connection-ctrl.connected {
+            justify-content: center;
+        }
+        #connection-ctrl.connected #btn-disconnect {
+            display: inline-block !important;
+            padding: 4px 20px;
+        }
+
+        #telemetry-data {
+            color: #00ff88; display: grid; grid-template-columns: 1fr 1fr; gap: 2px 10px;
+        }
+        .data-item span { color: #aaa; }
+
+        /* 實體通用按鍵 */
+        .btn {
+            position: absolute; background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15); color: #fff;
+            display: flex; justify-content: center; align-items: center;
+            font-weight: bold; font-size: 15px; border-radius: 12px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+        .btn.active { 
+            background: rgba(0, 183, 255, 0.3) !important; 
+            border-color: #00b7ff !important; 
+            box-shadow: 0 0 15px rgba(0,183,255,0.5); 
+        }
+
+        /* 頂部功能鍵 */
+        #btn-degree-setting { 
+            left: 5vw; top: 3vh; width: 11vw; height: 9vh; 
+            background: rgba(0, 183, 255, 0.1); border-color: rgba(0, 183, 255, 0.4);
+            color: #00b7ff; font-size: 13px; text-align: center; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; gap: 2px;
+        }
+        #btn-degree-setting span { font-size: 11px; color: #aaa; font-weight: normal; }
+        #btn-start { right: 5vw; top: 3vh; width: 10vw; height: 9vh; }
+
+        /* 角度切換選單 Modal */
+        #degree-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(5px); z-index: 200;
+            justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: #12161f; border: 1px solid rgba(0, 183, 255, 0.4); border-radius: 16px;
+            padding: 20px; width: 80vw; max-width: 480px; box-shadow: 0 0 25px rgba(0, 183, 255, 0.2);
+        }
+        .modal-title { font-size: 16px; font-weight: bold; color: #00b7ff; margin-bottom: 15px; text-align: center; }
+        .degree-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .deg-btn {
+            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 10px; color: #fff; padding: 10px; font-size: 13px; font-weight: bold;
+            cursor: pointer; text-align: center; transition: all 0.2s;
+        }
+        .deg-btn span { display: block; font-size: 11px; color: #888; margin-top: 2px; font-weight: normal; }
+        .deg-btn.selected { background: rgba(0, 183, 255, 0.25); border-color: #00b7ff; color: #00b7ff; }
+        .deg-btn.selected span { color: #88dfff; }
+        
+        .custom-deg-box { display: flex; gap: 8px; align-items: center; margin-bottom: 15px; }
+        .custom-deg-box input {
+            flex: 1; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px; color: #fff; padding: 6px 10px; font-size: 13px; text-align: center;
+            outline: none; -webkit-user-select: text; user-select: text; touch-action: auto;
+        }
+        .custom-deg-box button {
+            background: #00b7ff; border: none; color: #000; padding: 6px 16px; border-radius: 8px;
+            font-weight: bold; font-size: 12px; cursor: pointer;
+        }
+
+        .modal-close-btn {
+            width: 100%; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff; padding: 8px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer;
+        }
+
+        /* 左下角：大方向盤 */
+        #wheel-container { 
+            position: absolute; left: 4vw; bottom: 4vh; 
+            width: 55vh; height: 55vh; 
+            display: flex; justify-content: center; align-items: center;
+            z-index: 5;
+        }
+
+        #steering-wheel {
+            width: 80%; height: 80%; 
+            border-radius: 50%; position: relative;
+            background: transparent;
+            border: 12px solid rgba(120, 130, 170, 0.4);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+            transition: transform 0.01s linear;
+            z-index: 3;
+        }
+        #steering-wheel::before { content: ''; position: absolute; top: 48%; left: 0; right: 0; height: 4%; background: rgba(120, 130, 170, 0.4); }
+        #steering-wheel::after { content: ''; position: absolute; left: 48%; top: 0; bottom: 0; width: 4%; background: rgba(120, 130, 170, 0.4); }
+
+        #wheel-center-cap {
+            position: absolute; top: 50%; left: 50%; width: 28%; height: 28%;
+            background: #11141a; border: 4px solid rgba(120, 130, 170, 0.5); border-radius: 50%; 
+            transform: translate(-50%, -50%); box-shadow: 0 2px 8px rgba(0,0,0,0.8); z-index: 4;
+        }
+        #wheel-marker { position: absolute; top: -14px; left: 50%; width: 12px; height: 12px; background: #ff3b30; transform: translateX(-50%); border-radius: 50%; box-shadow: 0 0 8px #ff3b30; z-index: 5; }
+
+        /* 右側鍵位 */
+        #btn-rb { right: 4vw; bottom: 62vh; width: 11vw; height: 10vh; font-size: 16px; } 
+        #btn-lb { right: 4vw; bottom: 49vh; width: 11vw; height: 10vh; font-size: 16px; } 
+
+        .pedal-track { 
+            position: absolute; width: 11vw; 
+            background: rgba(5, 8, 10, 0.6); border: 2px solid rgba(255, 255, 255, 0.1); 
+            border-radius: 16px; overflow: hidden; box-shadow: inset 0 4px 15px rgba(0,0,0,0.8); 
+            z-index: 10;
+        }
+        #track-lt { right: 18vw; bottom: 6vh; height: 24vh; border-color: rgba(255, 69, 58, 0.3); }
+        #track-rt { right: 4vw; bottom: 6vh; height: 40vh; border-color: rgba(48, 209, 88, 0.3); }
+        
+        .pedal-fill { position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; pointer-events: none; }
+        #fill-lt { background: linear-gradient(to top, rgba(255,69,58,0.1), rgba(255,69,58,0.6)); }
+        #fill-rt { background: linear-gradient(to top, rgba(48,209,88,0.1), rgba(48,209,88,0.6)); }
+        
+        .pedal-label { position: absolute; top: 12px; width: 100%; text-align: center; font-size: 14px; font-weight: bold; pointer-events: none; text-shadow: 0 2px 4px rgba(0,0,0,0.9); color: #ddd; display: block; }
+        .pedal-label span { display: block; margin-top: 4px; font-family: monospace; font-size: 15px; }
+        #track-lt .pedal-label span { color: #ff453a; }
+        #track-rt .pedal-label span { color: #30d158; }
+
+        #btn-a { 
+            right: 18vw; bottom: 32vh; width: 11vw; height: 11vh; border-radius: 16px; 
+            background: rgba(255, 159, 10, 0.08); border-color: rgba(255, 159, 10, 0.4); color: #ff9f0a; font-size: 16px; z-index: 10;
+        }
+        #btn-a.active { background: rgba(255, 159, 10, 0.3) !important; border-color: #ff9f0a !important; box-shadow: 0 0 15px rgba(255,159,10,0.5); }
+
+        #btn-y {
+            position: absolute; bottom: 3vh; left: 50%; transform: translateX(-50%);
+            width: 12vw; height: 8vh; font-size: 15px; border-radius: 14px;
+            background: rgba(0, 102, 255, 0.08); border-color: rgba(0, 102, 255, 0.4); color: #3399ff; z-index: 10;
+        }
+        #btn-y.active { background: rgba(0, 102, 255, 0.35) !important; border-color: #0066ff !important; box-shadow: 0 0 15px rgba(0,102,255,0.6); }
+    </style>
+</head>
+<body>
+
+    <div id="monitor-panel">
+        <div id="status-text">未連接 (點擊此面板全屏)</div>
+        
+        <div id="connection-ctrl">
+            <input type="text" id="ip-input" placeholder="192.168.1.x" value="">
+            <button class="conn-btn auto" id="btn-auto-connect">自動連接</button>
+            <button class="conn-btn" id="btn-connect">手動連接</button>
+            <button class="conn-btn disconn" id="btn-disconnect">斷開</button>
+        </div>
+
+        <div id="telemetry-data">
+            <div class="data-item"><span>AxisX:</span> <span id="out-lx">0</span></div>
+            <div class="data-item"><span>RT(油):</span> <span id="out-rt">0</span></div>
+            <div class="data-item"><span>LT(剎):</span> <span id="out-lt">0</span></div>
+            <div class="data-item"><span>RB(升):</span> <span id="out-rb">0</span></div>
+            <div class="data-item"><span>LB(降):</span> <span id="out-lb">0</span></div>
+            <div class="data-item"><span>A(手剎):</span> <span id="out-a">0</span></div>
+        </div>
+    </div>
+
+    <!-- 左上角按鈕：動態轉向角設定 -->
+    <div class="btn" id="btn-degree-setting">
+        <div id="deg-title">900°</div>
+        <span>轉向角 ⚙️</span>
+    </div>
+    
+    <div class="btn" id="btn-start" data-btn="Start">視角</div>
+    <div class="btn" id="btn-rb" data-btn="RB">升擋 ＋</div>
+    <div class="btn" id="btn-lb" data-btn="LB">降擋 －</div>
+    <div class="btn" id="btn-a" data-btn="A">手剎</div>
+    <div class="btn" id="btn-y" data-btn="Y">車燈 💡</div>
+
+    <!-- 角度設定彈窗 -->
+    <div id="degree-modal">
+        <div class="modal-content">
+            <div class="modal-title">⚙️ 選擇方向盤轉動角度</div>
+            <div class="degree-options">
+                <div class="deg-btn" data-deg="360">360°<span>F1 / 方程式 (1圈)</span></div>
+                <div class="deg-btn" data-deg="540">540°<span>GT3 / 拉力賽車 (1.5圈)</span></div>
+                <div class="deg-btn" data-deg="720">720°<span>運動 / 漂移房車 (2圈)</span></div>
+                <div class="deg-btn" data-deg="900">900°<span>主流家用車 / 街車 (2.5圈)</span></div>
+            </div>
+            <div class="custom-deg-box">
+                <input type="number" id="custom-deg-input" placeholder="自定義總角度(如 1080)" min="180" max="1800">
+                <button id="btn-set-custom-deg">應用</button>
+            </div>
+            <button class="modal-close-btn" id="btn-close-modal">關閉</button>
+        </div>
+    </div>
+
+    <div id="wheel-container">
+        <div id="steering-wheel">
+            <div id="wheel-marker"></div>
+            <div id="wheel-center-cap"></div>
+        </div>
+    </div>
+
+    <div class="pedal-track" id="track-lt">
+        <div class="pedal-fill" id="fill-lt"></div>
+        <div class="pedal-label">剎車<span id="val-lt">0%</span></div>
+    </div>
+
+    <div class="pedal-track" id="track-rt">
+        <div class="pedal-fill" id="fill-rt"></div>
+        <div class="pedal-label">油門<span id="val-rt">0%</span></div>
+    </div>
+
+    <script>
+        const PORT = '9999';
+        
+        let totalDegree = 900;
+        let MAX_DEGREE = totalDegree / 2;
+        
+        let ws = null;
+        let lastSentPayload = "";
+        let isTouching = false;
+        let isAutoScanning = false; // 標記是否正在進行局域網自動掃描
+        
+        const panel = document.getElementById('monitor-panel');
+        const statusText = document.getElementById('status-text');
+        const ipInput = document.getElementById('ip-input');
+        const connCtrl = document.getElementById('connection-ctrl');
+        const btnConnect = document.getElementById('btn-connect');
+        const btnAutoConnect = document.getElementById('btn-auto-connect');
+        const btnDisconnect = document.getElementById('btn-disconnect');
+        const btnDegreeSetting = document.getElementById('btn-degree-setting');
+        const degTitle = document.getElementById('deg-title');
+        const degreeModal = document.getElementById('degree-modal');
+        const btnCloseModal = document.getElementById('btn-close-modal');
+        const customDegInput = document.getElementById('custom-deg-input');
+        const btnSetCustomDeg = document.getElementById('btn-set-custom-deg');
+        
+        let controllerState = { 
+            LeftStickX: 0, 
+            LT: 0, 
+            RT: 0, 
+            Buttons: { Start: false, RB: false, LB: false, A: false, Y: false } 
+        };
+
+        const savedIP = localStorage.getItem('pc_joystick_ip');
+        if (savedIP) { ipInput.value = savedIP; }
+
+        const savedDegree = localStorage.getItem('pc_joystick_degree');
+        if (savedDegree) { applyNewDegree(parseInt(savedDegree)); }
+
+        function applyNewDegree(deg) {
+            if (isNaN(deg) || deg < 180 || deg > 1800) return;
+            totalDegree = deg;
+            MAX_DEGREE = totalDegree / 2;
+            degTitle.innerText = `${totalDegree}°`;
+            localStorage.setItem('pc_joystick_degree', totalDegree);
+            
+            document.querySelectorAll('.deg-btn').forEach(btn => {
+                if (parseInt(btn.getAttribute('data-deg')) === totalDegree) {
+                    btn.classList.add('selected');
+                } else {
+                    btn.classList.remove('selected');
+                }
+            });
+        }
+
+        ['touchstart', 'touchmove', 'touchend', 'click'].forEach(evtType => {
+            ipInput.addEventListener(evtType, (e) => { e.stopPropagation(); }, { passive: true });
+            btnConnect.addEventListener(evtType, (e) => { e.stopPropagation(); });
+            btnAutoConnect.addEventListener(evtType, (e) => { e.stopPropagation(); });
+            btnDisconnect.addEventListener(evtType, (e) => { e.stopPropagation(); });
+            btnDegreeSetting.addEventListener(evtType, (e) => { e.stopPropagation(); });
+            degreeModal.addEventListener(evtType, (e) => { e.stopPropagation(); });
+            customDegInput.addEventListener(evtType, (e) => { e.stopPropagation(); }, { passive: true });
+        });
+
+        btnDegreeSetting.addEventListener('click', () => { degreeModal.style.display = 'flex'; });
+        btnCloseModal.addEventListener('click', () => { degreeModal.style.display = 'none'; });
+
+        document.querySelectorAll('.deg-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const deg = parseInt(btn.getAttribute('data-deg'));
+                applyNewDegree(deg);
+                degreeModal.style.display = 'none';
+            });
+        });
+
+        btnSetCustomDeg.addEventListener('click', () => {
+            const val = parseInt(customDegInput.value.trim());
+            if (val) {
+                applyNewDegree(val);
+                customDegInput.value = '';
+                degreeModal.style.display = 'none';
+            }
+        });
+
+        function updateMonitorDisplay() {
+            document.getElementById('out-lx').innerText = controllerState.LeftStickX;
+            document.getElementById('out-rt').innerText = controllerState.RT;
+            document.getElementById('out-lt').innerText = controllerState.LT;
+            document.getElementById('out-rb').innerText = controllerState.Buttons.RB ? '1' : '0';
+            document.getElementById('out-lb').innerText = controllerState.Buttons.LB ? '1' : '0';
+            document.getElementById('out-a').innerText = controllerState.Buttons.A ? '1' : '0';
+        }
+
+        // 建立指定的 WebSocket 連線
+        function connectToIP(targetIP) {
+            return new Promise((resolve, reject) => {
+                closeExistingConnection();
+
+                statusText.innerText = `正在連接至 ${targetIP}...`;
+                statusText.style.color = "#00b7ff";
+                panel.style.borderColor = "rgba(0,183,255,0.4)";
+
+                try {
+                    let tempWs = new WebSocket(`ws://${targetIP}:${PORT}`);
+                    
+                    tempWs.onopen = () => {
+                        ws = tempWs;
+                        statusText.innerText = `已連接至 PC (${targetIP})`;
+                        statusText.style.color = "#00ff88";
+                        panel.style.borderColor = "rgba(0,255,136,0.5)";
+                        ipInput.value = targetIP;
+                        localStorage.setItem('pc_joystick_ip', targetIP);
+                        
+                        // 連接成功：開啓居中斷開按鈕，隱藏手動與自動連接按鈕
+                        connCtrl.classList.add('connected');
+                        
+                        // 設定持久連線回調
+                        ws.onclose = handleConnectionClosed;
+                        ws.onerror = handleConnectionClosed;
+                        resolve(true);
+                    };
+
+                    tempWs.onerror = () => {
+                        tempWs.close();
+                        reject(false);
+                    };
+
+                    tempWs.onclose = () => {
+                        reject(false);
+                    };
+
+                } catch (err) {
+                    reject(err);
+                }
+            });
+        }
+
+        function handleConnectionClosed() {
+            statusText.innerText = "連線已斷開，請重試";
+            statusText.style.color = "#ff4444";
+            panel.style.borderColor = "rgba(255,68,68,0.4)";
+            connCtrl.classList.remove('connected'); // 還原 UI：顯示所有按鈕
+            closeExistingConnection();
+        }
+
+        // 局域網自動並發掃描 IP
+        async function startAutoScan() {
+            if (isAutoScanning) return;
+            isAutoScanning = true;
+
+            let baseIP = "192.168.1";
+            const currentVal = ipInput.value.trim();
+            if (currentVal && currentVal.split('.').length === 4) {
+                const parts = currentVal.split('.');
+                baseIP = `${parts[0]}.${parts[1]}.${parts[2]}`;
+            }
+
+            statusText.innerText = `正在自動掃描網段 ${baseIP}.1~254 ...`;
+            statusText.style.color = "#17a2b8";
+
+            let found = false;
+            // 構建 1~254 點位並發試探
+            const scanPromises = [];
+            for (let i = 1; i <= 254; i++) {
+                const testIP = `${baseIP}.${i}`;
+                scanPromises.push(
+                    new Promise((resolve) => {
+                        const socket = new WebSocket(`ws://${testIP}:${PORT}`);
+                        const timer = setTimeout(() => {
+                            socket.close();
+                            resolve(null);
+                        }, 1200); // 1.2秒超時
+
+                        socket.onopen = () => {
+                            clearTimeout(timer);
+                            socket.close();
+                            resolve(testIP);
+                        };
+                        socket.onerror = () => {
+                            clearTimeout(timer);
+                            resolve(null);
+                        };
+                    })
+                );
+            }
+
+            const results = await Promise.all(scanPromises);
+            const targetIP = results.find(ip => ip !== null);
+
+            isAutoScanning = false;
+
+            if (targetIP) {
+                connectToIP(targetIP);
+            } else {
+                statusText.innerText = "未在局域網發現 PC 端，請檢查服務是否啟動";
+                statusText.style.color = "#ff4444";
+            }
+        }
+
+        function closeExistingConnection() {
+            if (ws) {
+                ws.onopen = null;
+                ws.onclose = null;
+                ws.onerror = null;
+                if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+                    ws.close();
+                }
+                ws = null;
+            }
+        }
+
+        btnConnect.addEventListener('click', () => {
+            const ip = ipInput.value.trim();
+            if (!ip) {
+                statusText.innerText = "請先輸入有效的 IP 地址！";
+                statusText.style.color = "#ff4444";
+                return;
+            }
+            connectToIP(ip).catch(() => {
+                statusText.innerText = "連線失敗，請檢查 PC 端及 IP";
+                statusText.style.color = "#ff4444";
+            });
+        });
+
+        btnAutoConnect.addEventListener('click', startAutoScan);
+
+        btnDisconnect.addEventListener('click', () => {
+            closeExistingConnection();
+            connCtrl.classList.remove('connected'); // 主動斷開，還原顯示輸入框与按鈕
+            statusText.innerText = "已主動斷開連線";
+            statusText.style.color = "#aaa";
+            panel.style.borderColor = "rgba(255,255,255,0.15)";
+        });
+
+        panel.addEventListener('click', (e) => { 
+            if (e.target === panel || e.target === statusText || e.target.parentElement.id === 'telemetry-data') {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(() => {});
+                }
+            }
+        });
+        
+        function updatePhysics() {
+            if (!isTouching && currentRotation !== 0) {
+                currentRotation *= 0.82;
+                if (Math.abs(currentRotation) < 0.3) {
+                    currentRotation = 0;
+                }
+                wheel.style.transform = `rotate(${currentRotation}deg)`;
+                
+                let stickX = Math.round((currentRotation / MAX_DEGREE) * 32767);
+                if (stickX > 31128) stickX = 32767;
+                if (stickX < -31128) stickX = -32767;
+                controllerState.LeftStickX = stickX;
+            }
+        }
+
+        function framePayloadLoop() {
+    updatePhysics(); // 保持原本的方向盘物理计算不变
+
+    // 判断当前是否运行在安卓 APK 环境中
+    if (window.AndroidBluetooth) {
+        // 1. 获取各个按键的 0/1 状态
+        let btnStart = controllerState.Buttons.Start ? 1 : 0;
+        let btnRB    = controllerState.Buttons.RB ? 1 : 0;
+        let btnLB    = controllerState.Buttons.LB ? 1 : 0;
+        let btnA     = controllerState.Buttons.A ? 1 : 0;
+        let btnY     = controllerState.Buttons.Y ? 1 : 0;
+
+        // 2. 把 5 个按键压成一个数字（位运算掩码）
+        let buttonMask = (btnStart << 0) | (btnRB << 1) | (btnLB << 2) | (btnA << 3) | (btnY << 4);
+
+        // 3. 直接传给安卓原生蓝牙（方向盘X轴, 油门RT, 刹车LT, 按键集合）
+        window.AndroidBluetooth.sendGamepadData(
+            controllerState.LeftStickX,
+            controllerState.RT,
+            controllerState.LT,
+            buttonMask
+        );
+    }
+
+    updateMonitorDisplay();
+    requestAnimationFrame(framePayloadLoop);
+}
+requestAnimationFrame(framePayloadLoop);
+
+
+        // ================= 物理按鍵控制與方向盤系統 =================
+        document.querySelectorAll('.btn[data-btn]').forEach(btn => {
+            const name = btn.getAttribute('data-btn');
+            btn.addEventListener('touchstart', (e) => { e.preventDefault(); btn.classList.add('active'); controllerState.Buttons[name] = true; });
+            btn.addEventListener('touchend', (e) => { e.preventDefault(); btn.classList.remove('active'); controllerState.Buttons[name] = false; });
+            btn.addEventListener('touchcancel', (e) => { e.preventDefault(); btn.classList.remove('active'); controllerState.Buttons[name] = false; });
+        });
+
+        const wheel = document.getElementById('steering-wheel');
+        const wheelContainer = document.getElementById('wheel-container');
+        let wheelCenter = { x: 0, y: 0 }, lastAngle = 0, currentRotation = 0, steeringTouchId = null;
+
+        function getRawAngle(touchX, touchY) { return Math.atan2(touchY - wheelCenter.y, touchX - wheelCenter.x) * (180 / Math.PI); }
+
+        wheelContainer.addEventListener('touchstart', (e) => {
+            e.preventDefault(); if (steeringTouchId !== null) return;
+            isTouching = true;
+            const rect = wheel.getBoundingClientRect();
+            wheelCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+            const touch = e.changedTouches[0];
+            steeringTouchId = touch.identifier;
+            lastAngle = getRawAngle(touch.clientX, touch.clientY);
+        });
+
+        wheelContainer.addEventListener('touchmove', (e) => {
+            if (steeringTouchId === null) return; e.preventDefault();
+            let activeTouch = null;
+            for (let i = 0; i < e.touches.length; i++) { if (e.touches[i].identifier === steeringTouchId) { activeTouch = e.touches[i]; break; } }
+            if (!activeTouch) return;
+
+            const currentAngle = getRawAngle(activeTouch.clientX, activeTouch.clientY);
+            let deltaAngle = currentAngle - lastAngle;
+            if (deltaAngle > 180) deltaAngle -= 360;
+            if (deltaAngle < -180) deltaAngle += 360;
+
+            currentRotation += deltaAngle;
+            lastAngle = currentAngle;
+
+            if (currentRotation >= MAX_DEGREE) { currentRotation = MAX_DEGREE; }
+            else if (currentRotation <= -MAX_DEGREE) { currentRotation = -MAX_DEGREE; }
+
+            wheel.style.transform = `rotate(${currentRotation}deg)`;
+            
+            let stickX = Math.round((currentRotation / MAX_DEGREE) * 32767);
+            if (stickX > 31128) stickX = 32767;
+            if (stickX < -31128) stickX = -32767;
+            controllerState.LeftStickX = stickX;
+        });
+
+        function handleWheelRelease(e) {
+            if (steeringTouchId === null) return;
+            for (let i = 0; i < e.changedTouches.length; i++) { 
+                if (e.changedTouches[i].identifier === steeringTouchId) { 
+                    e.preventDefault();
+                    steeringTouchId = null;
+                    isTouching = false;
+                    break; 
+                } 
+            }
+        }
+        wheelContainer.addEventListener('touchend', handleWheelRelease);
+        wheelContainer.addEventListener('touchcancel', handleWheelRelease);
+
+        function setupPedal(trackId, fillId, stateKey) {
+            const track = document.getElementById(trackId), fill = document.getElementById(fillId), labelSpan = track.querySelector('.pedal-label span');
+            let pedalTouchId = null;
+
+            function updatePedal(clientY) {
+                const rect = track.getBoundingClientRect();
+                let pct = (rect.bottom - clientY) / rect.height; pct = Math.max(0, Math.min(1, pct));
+                fill.style.height = `${pct * 100}%`;
+                labelSpan.innerText = `${Math.round(pct * 100)}%`;
+                controllerState[stateKey] = Math.round(pct * 255);
+            }
+
+            track.addEventListener('touchstart', (e) => {
+                e.preventDefault(); if (pedalTouchId !== null) return;
+                const touch = e.changedTouches[0]; pedalTouchId = touch.identifier;
+                updatePedal(touch.clientY);
+            });
+
+            track.addEventListener('touchmove', (e) => {
+                if (pedalTouchId === null) return; e.preventDefault();
+                for (let i = 0; i < e.touches.length; i++) { if (e.touches[i].identifier === pedalTouchId) { updatePedal(e.touches[i].clientY); break; } }
+            });
+
+            window.addEventListener('touchend', (e) => {
+                if (pedalTouchId === null) return;
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === pedalTouchId) {
+                        pedalTouchId = null; fill.style.height = '0%'; labelSpan.innerText = `0%`; controllerState[stateKey] = 0; break;
+                    }
+                }
+            });
+            window.addEventListener('touchcancel', (e) => {
+                if (pedalTouchId === null) return;
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === pedalTouchId) {
+                        pedalTouchId = null; fill.style.height = '0%'; labelSpan.innerText = `0%`; controllerState[stateKey] = 0; break;
+                    }
+                }
+            });
+        }
+
+        setupPedal('track-lt', 'fill-lt', 'LT');
+        setupPedal('track-rt', 'fill-rt', 'RT');
+    </script>
+</body>
+</html>
