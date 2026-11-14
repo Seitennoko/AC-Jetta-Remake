@@ -30,7 +30,7 @@ in Android Studio.
   zeroes the stick, triggers and all buttons, so the car never keeps a
   stuck throttle.
 - **Auto-connect** — the client can sweep the LAN for the server, or you can
-  type the PC's IP by hand.
+  type the PC's IP by hand. But it still has some unknown problems making it not work sometimes.
 - **Minimal protocol** — one comma-separated string per frame, e.g.
   `X:12345,T:180,B:0,BK:0,ST:0,RB:0,LB:0,A:0,Y:0`. No JSON, no per-frame
   logging on the hot path; malformed packets are silently dropped.
@@ -57,7 +57,10 @@ requirements.txt   Python dependencies
 1. Install Python 3 from python.org. On the first installer screen, tick
    **Add Python to PATH** — without it, the `python` command will not be
    found in the terminal.
-2. In a terminal inside this folder:
+   
+2. Download the server.py from [Releases](../../releases) and drag it in the folder that you can quickly find out. 
+
+3. In a terminal inside this folder:
 
    ```powershell
    pip install -r requirements.txt
@@ -68,19 +71,19 @@ requirements.txt   Python dependencies
    then Finish. That driver is the part that makes Windows believe a real
    Xbox 360 controller is plugged in — without it, `vgamepad` cannot
    create the gamepad object.
-3. Start the server:
+4. Start the server:
 
    ```powershell
-   python server\server.py
+   python (the location of your server file)\server.py
    ```
 
    It prints your PC's LAN IP. Keep the window open.
-4. Check the virtual controller exists: press Win+R, type `joy.cpl`,
+5. Check the virtual controller exists: press Win+R, type `joy.cpl`,
    Enter. You should see a "Controller (Xbox 360 Controller for
    Windows)". Select it, open Properties, and move the phone wheel and
    pedals — the axes should move. If no controller appears, the ViGEmBus
    driver did not install (see below).
-5. Start the server **after** launching Assetto Corsa Content Manager, so the game sees
+6. Start the server **after** launching Assetto Corsa Content Manager, so the game sees
    the controller when it starts. If you start before that, sometimes it might have some connection problems with the game. If failed, try more times.
 
 If something does not work:
@@ -95,16 +98,16 @@ If something does not work:
   (Steam library → right-click Assetto Corsa → Properties → Controller
   → Disable Steam Input). Steam can intercept XInput controllers
   before the game sees them.
-6. Once the setup work been done, there is no need to repeat the work in 1. and 2. Just find out the server.py file, start it, check the IP address and put it in your phone to finish the connection. Please mind not closing the black window of server.py while using the handbox. 
+7. Once the setup work been done, there is no need to repeat the work in 1, 2 and 3. Just find out the server.py file, start it, check the IP address and put it in your phone to finish the connection. Please mind not closing the black window of server.py while using the handbox. 
 
 ## Setup — phone
 
 **Option A — APK (easiest):** download the APK from
 [Releases](../../releases), install it, open it, enter the PC's LAN IP
-(or tap auto-connect), and drive.
+(the auto-connect function does not work on some devices, you can have a try.), and drive.
 
 **Option B — browser:** open `client/index.html` in the phone's browser
-(same network as the PC), enter the PC's LAN IP, and drive. No install. But you need to rotate your screen at first.
+(same network as the PC), enter the PC's LAN IP, and drive. No install. But you need to rotate your screen at first. [Releases](../../releases) ← Here can you also download the `client/index.html`
 
 Note: auto-connect sweeps `192.168.1.1–254` only. If your network uses a
 different subnet (e.g. a phone hotspot on `192.168.43.x`), enter the IP
