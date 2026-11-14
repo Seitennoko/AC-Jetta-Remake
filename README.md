@@ -50,7 +50,7 @@ requirements.txt   Python dependencies
   which is Windows-only) with Python 3 installed.
 - Android phone, or any phone browser, on the same LAN / hotspot as the PC.
 - Assetto Corsa on the PC.
--Content Manager for Assetto Corsa.
+- Content Manager for Assetto Corsa.
 
 ## Setup — PC
 
@@ -95,7 +95,7 @@ If something does not work:
   (Steam library → right-click Assetto Corsa → Properties → Controller
   → Disable Steam Input). Steam can intercept XInput controllers
   before the game sees them.
-6.Once the setup work been done, there is no need to repeat the work in 1. and 2. Just find out the server.py file, start it, check the IP address and put it in your phone to finish the connection. Please mind not closing the black window of server.py while using the handbox. 
+6. Once the setup work been done, there is no need to repeat the work in 1. and 2. Just find out the server.py file, start it, check the IP address and put it in your phone to finish the connection. Please mind not closing the black window of server.py while using the handbox. 
 
 ## Setup — phone
 
