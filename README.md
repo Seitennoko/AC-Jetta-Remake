@@ -138,15 +138,12 @@ Speed, Steering Gamma, Filter and Speed Sensitivity.
 
 ## Known limitations
 
-- The V23.2 server is **one-way**: it only receives input. The client page
-  already has a dashboard (rev arc, shift light, gear, speed) and listens
-  for telemetry, but this server never sends any — the dashboard stays at
-  its default values. Reading Assetto Corsa's shared-memory telemetry is
-  the obvious next step.
+- The V23.2 server is **one-way**: it only receives input.
 - `BK` (Back button) is always 0 — the page has no Back button. The server
   parses it fine; it just can never become 1.
 - Windows-only, for the driver reason above.
-
+- It performs badly in the low-performance PC device.
+- It will make you phone overheat in poor heat dissipation condition.
 ## Licence
 
 MIT — see [LICENSE](LICENSE).
