@@ -4,7 +4,7 @@
 <img src="screenshots/Screenshot_2026-11-15-17-35-39-512_com.example.myapplication111.jpg" width="600">
 <img src="screenshots/Screenshot_2026-11-15-17-35-46-009_com.example.myapplication111.jpg" width="600">
 Brief introduction:
-The button "手煞" is handbrake, "油門" is gas, "+" is gear up, and "-" is gear down. The "手動連接" is the connect button. The "視角" button now is unavailable. The degree button with a gear icon is the wheel steering degree changer.
+The button "手剎" is handbrake, "油門" is gas, "+" is gear up, and "-" is gear down. The "手動連接" is the connect button. The "視角" button now is unavailable. The degree button with a gear icon is the wheel steering degree changer.
 Inspired by Car Parking Multiplayer
 
 Turn your phone into a wireless steering wheel and pedals for **Assetto Corsa**.
