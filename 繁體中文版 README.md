@@ -2,6 +2,11 @@
 
 [English](README.md) | 繁體中文
 
+靈感來自CPM（Car Parking Multiplayer）
+
+<img src="screenshots/Screenshot_2026-11-15-17-35-39-512_com.example.myapplication111.jpg" width="600">
+<img src="screenshots/Screenshot_2026-11-15-17-35-46-009_com.example.myapplication111.jpg" width="600">
+
 把你的手機變成 Assetto Corsa 的無線方向盤和腳踏。
 
 手機上顯示觸控方向盤、油門、煞車和按鍵，所有觸控輸入經局域網傳到電腦上的小型 Python 伺服器，再經虛擬 Xbox 360 手柄注入 Windows，遊戲看到的就是一個真的手柄，不需要裝遊戲模組。
