@@ -1,7 +1,9 @@
 # AC Jetta Remake
 
 [English](README.md) | [繁體中文](README_zh-Hant.md) | 简体中文
-
+灵感来自于经典手游CPM（Car Parking Multiplayer）
+<img src="screenshots/Screenshot_2026-11-15-17-35-39-512_com.example.myapplication111.jpg" width="600">
+<img src="screenshots/Screenshot_2026-11-15-17-35-46-009_com.example.myapplication111.jpg" width="600">
 把你的手机变成 Assetto Corsa 的无线方向盘和踏板。
 
 手机上显示触控方向盘、油门、刹车和按键，所有触控输入经局域网传到电脑上的小型 Python 服务器，再经虚拟 Xbox 360 手柄注入 Windows，游戏看到的就是一个真的手柄，不需要装游戏模组。
