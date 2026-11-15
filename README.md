@@ -1,5 +1,5 @@
 # AC Jetta Remake
-[English](README.md) | [繁體中文](README_zh-Hant.md) | 简体中文
+[English](README.md) | [繁體中文](README_zh-Hant.md) | [简体中文](<简体中文版 README.md>) 
 
 <img src="screenshots/Screenshot_2026-11-15-17-35-39-512_com.example.myapplication111.jpg" width="600">
 <img src="screenshots/Screenshot_2026-11-15-17-35-46-009_com.example.myapplication111.jpg" width="600">
